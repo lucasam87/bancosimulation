@@ -59,16 +59,37 @@ const Register: React.FC = () => {
 
         const toastId = toast.loading('Criando sua conta...');
         try {
-            await api.post('/auth/register', {
+            // Validate first
+            // Note: In client-side flow, database uniqueness checks (CPF) are harder without Cloud Functions.
+            // We will rely on Firebase Auth email uniqueness for now.
+
+            // 1. Create User in Firebase Auth
+            const { createUserWithEmailAndPassword } = await import("firebase/auth");
+            const { doc, setDoc } = await import("firebase/firestore");
+            const { auth, db } = await import("../firebase-config"); // Lazy load
+
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // 2. Create User Profile in Firestore
+            await setDoc(doc(db, "users", user.uid), {
                 name,
-                cpf,
                 email,
-                password
+                cpf,
+                uid: user.uid,
+                createdAt: new Date().toISOString(),
+                balance: 0, // Initial balance
+                accountNumber: Math.floor(100000 + Math.random() * 900000).toString() // Random account
             });
-            toast.success('Conta criada com sucesso! Faça seu primeiro login.', { id: toastId });
-            navigate('/login');
+
+            toast.success('Conta criada com sucesso! Você já está logado.', { id: toastId });
+            navigate('/dashboard'); // Auto login
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao registrar', { id: toastId });
+            console.error(err);
+            let msg = 'Erro ao criar conta.';
+            if (err.code === 'auth/email-already-in-use') msg = 'E-mail já está em uso.';
+            if (err.code === 'auth/weak-password') msg = 'Senha muito fraca.';
+            toast.error(msg, { id: toastId });
         }
     };
 

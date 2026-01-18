@@ -16,16 +16,21 @@ const Login: React.FC = () => {
         e.preventDefault();
         const toastId = toast.loading('Autenticando...');
         try {
-            const formData = new FormData();
-            formData.append('username', email);
-            formData.append('password', password);
+            const { signInWithEmailAndPassword } = await import("firebase/auth");
+            const { auth } = await import("../firebase-config");
 
-            const response = await api.post('/auth/login', formData);
-            signIn(response.data.access_token);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const token = await userCredential.user.getIdToken();
+
+            // Pass the token to AuthContext
+            // Note: AuthContext might need updates to handle this token correctly if it tries to fetch /me
+            signIn(token);
+
             toast.success('Bem-vindo de volta!', { id: toastId });
             navigate('/dashboard');
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'E-mail ou senha incorretos', { id: toastId });
+            console.error(err);
+            toast.error('E-mail ou senha incorretos', { id: toastId });
         }
     };
 

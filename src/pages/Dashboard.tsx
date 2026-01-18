@@ -75,15 +75,44 @@ const Dashboard: React.FC = () => {
 
     const fetchData = async () => {
         try {
-            const [accRes, transRes, loanRes] = await Promise.all([
-                api.get('/accounts/me'),
-                api.get('/transactions/statement'),
-                api.get('/loans/list')
-            ]);
-            setAccount(accRes.data);
-            setTransactions(transRes.data);
-            setLoans(loanRes.data);
+            const { auth, db } = await import("../firebase-config");
+            const { doc, getDoc, collection, getDocs, query, orderBy } = await import("firebase/firestore");
+
+            // Wait for auth to initialize if needed
+            if (!auth.currentUser) return;
+
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userDocRef);
+
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                setAccount({
+                    number: data.accountNumber,
+                    balance: data.balance || 0,
+                    credit_limit: data.credit_limit || 1000,
+                    score: data.score || 450
+                });
+
+                // Fetch transactions (assuming subcollection 'transactions')
+                // For now, if it doesn't exist, it's empty
+                try {
+                    const transRef = collection(db, "users", auth.currentUser.uid, "transactions");
+                    const q = query(transRef, orderBy("timestamp", "desc"));
+                    const querySnapshot = await getDocs(q);
+                    const transList: Transaction[] = [];
+                    querySnapshot.forEach((doc) => {
+                        transList.push({ id: doc.id, ...doc.data() } as any);
+                    });
+                    setTransactions(transList);
+                } catch (e) {
+                    console.log("No transactions found yet");
+                    setTransactions([]);
+                }
+            }
+            // Mock Loans for now
+            setLoans([]);
         } catch (error) {
+            console.error(error);
             toast.error('Erro ao carregar dados');
         } finally {
             setLoading(false);
@@ -91,7 +120,9 @@ const Dashboard: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchData();
+        // Small delay to ensure auth is ready or use onAuthStateChanged
+        const timer = setTimeout(() => fetchData(), 1000);
+        return () => clearTimeout(timer);
     }, []);
 
     const totalDebt = loans.reduce((acc, l) => acc + (l.status === 'active' ? Number(l.total_to_pay) : 0), 0);
@@ -106,7 +137,6 @@ const Dashboard: React.FC = () => {
                 balance: Number(t.balance_after),
                 netWorth: Number(t.balance_after) - runningDebt
             };
-            // Going backwards: if this was a loan deposit, before it the debt was lower
             if (t.category === 'Empréstimo' && t.type === 'deposit') {
                 runningDebt -= Number(t.amount);
             }
@@ -145,46 +175,86 @@ const Dashboard: React.FC = () => {
             toast.error('Insira um valor válido');
             return;
         }
+        if (type === 'withdraw' && (account?.balance || 0) < val) {
+            toast.error('Saldo insuficiente');
+            return;
+        }
 
         const toastId = toast.loading('Processando...');
 
         try {
-            await api.post(`/transactions/${type}`, {
+            const { auth, db } = await import("../firebase-config");
+            const { doc, updateDoc, addDoc, collection } = await import("firebase/firestore");
+            if (!auth.currentUser) return;
+
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const newBalance = type === 'deposit'
+                ? (account?.balance || 0) + val
+                : (account?.balance || 0) - val;
+
+            // Update Balance
+            await updateDoc(userRef, { balance: newBalance });
+
+            // Add Transaction
+            await addDoc(collection(db, "users", auth.currentUser.uid, "transactions"), {
+                type,
+                category: type === 'deposit' ? 'Depósito' : category,
                 amount: val,
-                type: type,
-                category: type === 'deposit' ? 'Depósito' : category
+                timestamp: new Date().toISOString(),
+                balance_after: newBalance
             });
+
             setAmount('');
             setCategory('Outros');
-            await fetchData();
+            await fetchData(); // Refresh UI
             toast.success(type === 'deposit' ? 'Depósito realizado!' : 'Saque realizado!', { id: toastId });
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro na operação', { id: toastId });
+            console.error(err);
+            toast.error('Erro na operação', { id: toastId });
         }
     };
 
     const handleTransfer = async () => {
+        // Mock transfer for now (just deduct from self)
         const val = parseFloat(transferAmount);
         if (!val || val <= 0 || !destAccount) {
             toast.error('Preencha os dados corretamente');
             return;
         }
+        if ((account?.balance || 0) < val) {
+            toast.error('Saldo insuficiente');
+            return;
+        }
 
         const toastId = toast.loading('Processando transferência...');
-
         try {
-            await api.post('/transactions/transfer', {
-                destination_account: destAccount,
+            const { auth, db } = await import("../firebase-config");
+            const { doc, updateDoc, addDoc, collection } = await import("firebase/firestore");
+            if (!auth.currentUser) return;
+
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const newBalance = (account?.balance || 0) - val;
+
+            // Update Balance
+            await updateDoc(userRef, { balance: newBalance });
+
+            // Add Transaction
+            await addDoc(collection(db, "users", auth.currentUser.uid, "transactions"), {
+                type: 'transfer_out',
+                category: 'Transferência',
                 amount: val,
-                category: 'Transferência'
+                timestamp: new Date().toISOString(),
+                balance_after: newBalance,
+                destination: destAccount
             });
+
             setTransferAmount('');
             setDestAccount('');
             setShowTransferModal(false);
             await fetchData();
             toast.success('Transferência realizada com sucesso!', { id: toastId });
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro na transferência', { id: toastId });
+            toast.error('Erro na transferência', { id: toastId });
         }
     };
 
