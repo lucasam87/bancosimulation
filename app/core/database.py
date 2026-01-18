@@ -17,8 +17,9 @@ try:
         SessionLocal = None
 except Exception as e:
     print(f"Database connection error: {e}")
-    engine = None
     SessionLocal = None
+
+Base = declarative_base()
 
 def get_db():
     if SessionLocal is None:
