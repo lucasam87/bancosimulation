@@ -1,4 +1,8 @@
-from backend.app.main import app
+import sys
+import os
 
-# Vercel looks for a variable named 'app'
-# This serves as the adapter
+# Add the 'backend' folder to the python path
+# This ensures that 'from app...' imports work correctly
+sys.path.append(os.path.join(os.path.dirname(__file__), '../backend'))
+
+from app.main import app

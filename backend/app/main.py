@@ -22,8 +22,12 @@ app.add_middleware(
 from app.api.v1 import auth, accounts, transactions, credit, loans, cards
 from app.core.database import Base, engine
 
-# Create tables on startup (Educational purpose, for production use Alembic)
-Base.metadata.create_all(bind=engine)
+# Create tables on startup - SAFELY
+if engine is not None:
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Error creating tables on startup: {e}")
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(accounts.router, prefix=f"{settings.API_V1_STR}/accounts", tags=["accounts"])
