@@ -12,8 +12,51 @@ const Register: React.FC = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
+    const validateCPF = (cpf: string) => {
+        cpf = cpf.replace(/[^\d]+/g, '');
+        if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+        let soma = 0, resto;
+        for (let i = 1; i <= 9; i++) soma = soma + parseInt(cpf.substring(i - 1, i)) * (11 - i);
+        resto = (soma * 10) % 11;
+        if ((resto === 10) || (resto === 11)) resto = 0;
+        if (resto !== parseInt(cpf.substring(9, 10))) return false;
+        soma = 0;
+        for (let i = 1; i <= 10; i++) soma = soma + parseInt(cpf.substring(i - 1, i)) * (12 - i);
+        resto = (soma * 10) % 11;
+        if ((resto === 10) || (resto === 11)) resto = 0;
+        if (resto !== parseInt(cpf.substring(10, 11))) return false;
+        return true;
+    };
+
+    const validateEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const maskCPF = (value: string) => {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1');
+    };
+
+    const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setCpf(maskCPF(e.target.value));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validateCPF(cpf)) {
+            toast.error('CPF inválido. Verifique os números.');
+            return;
+        }
+        if (!validateEmail(email)) {
+            toast.error('E-mail inválido.');
+            return;
+        }
+
         const toastId = toast.loading('Criando sua conta...');
         try {
             await api.post('/auth/register', {
@@ -53,7 +96,14 @@ const Register: React.FC = () => {
                     </div>
                     <div className="form-group">
                         <label><CreditCard size={14} style={{ marginRight: '4px' }} /> CPF</label>
-                        <input type="text" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} required />
+                        <input
+                            type="text"
+                            placeholder="000.000.000-00"
+                            value={cpf}
+                            onChange={handleCpfChange}
+                            maxLength={14}
+                            required
+                        />
                     </div>
                     <div className="form-group">
                         <label><Mail size={14} style={{ marginRight: '4px' }} /> E-mail</label>
