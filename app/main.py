@@ -51,6 +51,28 @@ def setup_database():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.get("/")
-def read_root():
-    return {"message": "Bem-vindo ao Bankofthe API - Vercel Edition 🚀"}
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
+# Serve static files (React build)
+# We assume the build output is in a 'dist' folder in the root or same dir
+static_dir = os.path.join(os.path.dirname(__file__), "..", "dist")
+
+if os.path.exists(static_dir):
+    app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        # API routes are already handled above because they are included first
+        # Check if file exists in dist
+        file_path = os.path.join(static_dir, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # Otherwise serve index.html for client-side routing
+        return FileResponse(os.path.join(static_dir, "index.html"))
+else:
+    @app.get("/")
+    def read_root():
+        return {"message": "Bem-vindo ao Bankofthe API (Frontend not built/found) 🚀"}
