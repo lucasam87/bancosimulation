@@ -28,7 +28,7 @@ const Home: React.FC = () => {
                     <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: '0.75rem', color: '#fff' }}>
                         <ShieldCheck size={24} />
                     </div>
-                    <span style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px' }}>Retrograde</span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px' }}>Bankofthe</span>
                 </div>
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                     <Link to="/login" style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: '500' }}>Login</Link>

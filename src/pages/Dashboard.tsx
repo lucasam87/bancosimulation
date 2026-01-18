@@ -258,7 +258,7 @@ const Dashboard: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}
             >
                 <div>
-                    <h1 style={{ margin: 0 }}>Retrograde Dashboard</h1>
+                    <h1 style={{ margin: 0 }}>Bankofthe Dashboard</h1>
                     <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>Sua saúde financeira em um só lugar.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>

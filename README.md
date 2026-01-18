@@ -1,6 +1,6 @@
-# Retrograde Newton Banking System 🚀
+# Bankofthe Banking System 🚀
 
-Bem-vindo ao **Retrograde Newton**, um sistema bancário digital moderno e completo, desenvolvido com **FastAPI** (Backend) e **React** (Frontend).
+Bem-vindo ao **Bankofthe**, um sistema bancário digital moderno e completo, desenvolvido com **FastAPI** (Backend) e **React** (Frontend).
 
 ## 🌟 Funcionalidades
 

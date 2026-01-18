@@ -54,7 +54,7 @@ const CreditCardPage: React.FC = () => {
         try {
             const res = await api.post('/cards/request');
             setCard(res.data);
-            toast.success('Parabéns! Seu cartão Retrograde foi emitido.', { id: toastId });
+            toast.success('Parabéns! Seu cartão Bankofthe foi emitido.', { id: toastId });
         } catch (err: any) {
             const msg = err.response?.data?.detail || "Não foi possível emitir seu cartão agora.";
             toast.error(msg, { id: toastId });
@@ -182,7 +182,7 @@ const CreditCardPage: React.FC = () => {
                         <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '200px', height: '200px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '50%', filter: 'blur(50px)' }}></div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', letterSpacing: '0.1em' }}>RETROGRADE</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', letterSpacing: '0.1em' }}>BANKOFTHE</div>
                             <div style={{ width: '45px', height: '35px', background: 'linear-gradient(45deg, #f59e0b, #fbbf24)', borderRadius: '0.3rem' }}></div>
                         </div>
 
