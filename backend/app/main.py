@@ -32,7 +32,21 @@ app.include_router(credit.router, prefix=f"{settings.API_V1_STR}/credit", tags=[
 app.include_router(loans.router, prefix=f"{settings.API_V1_STR}/loans", tags=["loans"])
 app.include_router(cards.router, prefix=f"{settings.API_V1_STR}/cards", tags=["cards"])
 
+@app.get("/api/v1/setup-db")
+def setup_database():
+    """
+    Endpoint utilitário para criar as tabelas no banco de dados
+    quando rodando em ambientes serverless (como Vercel) onde
+    não temos acesso direto ao shell.
+    """
+    try:
+        from app.core.database import engine, Base
+        from app.models import all_models # Import models to register them
+        Base.metadata.create_all(bind=engine)
+        return {"status": "ok", "message": "Tabelas criadas com sucesso!"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Banking System API"}
-
+    return {"message": "Bem-vindo ao Bankofthe API - Vercel Edition 🚀"}
